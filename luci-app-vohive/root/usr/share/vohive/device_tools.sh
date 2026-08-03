@@ -60,6 +60,17 @@ dep_value() {
 	fi
 }
 
+# qmi_wwan 驱动有三选一变体(base / -fibocom / -quectel)，任一存在即视为已装
+qmi_wwan_present() {
+	if pkg_installed kmod-usb-net-qmi-wwan || \
+	   pkg_installed kmod-usb-net-qmi-wwan-fibocom || \
+	   pkg_installed kmod-usb-net-qmi-wwan-quectel; then
+		printf 'true'
+	else
+		printf 'false'
+	fi
+}
+
 has_cmd() {
 	command -v "$1" >/dev/null 2>&1
 }
@@ -613,7 +624,7 @@ status_json() {
 	printf '{"ok":true,'
 	printf '"serial_driver_installed":%s,' "$(dep_value kmod-usb-serial)"
 	printf '"option_driver_installed":%s,' "$(dep_value kmod-usb-serial-option)"
-	printf '"qmi_wwan_installed":%s,' "$(dep_value kmod-usb-net-qmi-wwan)"
+	printf '"qmi_wwan_installed":%s,' "$(qmi_wwan_present)"
 	printf '"uqmi_installed":%s,' "$(dep_value uqmi)"
 	printf '"socat_installed":%s,' "$(dep_value socat)"
 	printf '"stty_available":%s,' "$(has_cmd stty && printf true || printf false)"
@@ -628,7 +639,7 @@ probe_json() {
 	printf '{"ok":true,'
 	printf '"serial_driver_installed":%s,' "$(dep_value kmod-usb-serial)"
 	printf '"option_driver_installed":%s,' "$(dep_value kmod-usb-serial-option)"
-	printf '"qmi_wwan_installed":%s,' "$(dep_value kmod-usb-net-qmi-wwan)"
+	printf '"qmi_wwan_installed":%s,' "$(qmi_wwan_present)"
 	printf '"uqmi_installed":%s,' "$(dep_value uqmi)"
 	printf '"socat_installed":%s,' "$(dep_value socat)"
 	printf '"stty_available":%s,' "$(has_cmd stty && printf true || printf false)"
