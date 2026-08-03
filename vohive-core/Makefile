@@ -52,7 +52,7 @@ endef
 
 define Package/vohive-core/install
 	$(INSTALL_DIR) $(1)/etc/vohive/bin
-	$(INSTALL_BIN) ./files/vohive-$(2) $(1)/etc/vohive/bin/vohive
+	$(INSTALL_BIN) ./files/vohive_$(VOHIVE_VERSION)_linux_$(2) $(1)/etc/vohive/bin/vohive
 	echo "$(VOHIVE_VERSION)" > $(1)/etc/vohive/bin/version
 	echo "$(2)" > $(1)/etc/vohive/bin/arch
 endef

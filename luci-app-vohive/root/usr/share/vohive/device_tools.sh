@@ -24,8 +24,32 @@ fail() {
 	exit 1
 }
 
+# Detect package manager: prefer apk (ImmortalWrt SNAPSHOT) else opkg (OpenWrt/older)
+pkg_manager() {
+	if command -v apk >/dev/null 2>&1; then
+		printf 'apk'
+	elif command -v opkg >/dev/null 2>&1; then
+		printf 'opkg'
+	else
+		printf 'none'
+	fi
+}
+
 pkg_installed() {
-	opkg status "$1" 2>/dev/null | grep -q '^Status: .* installed'
+	local pm
+	pm="$(pkg_manager)"
+	case "$pm" in
+		apk)
+			# apk info -e exits 0 if package is installed
+			apk info -e "$1" >/dev/null 2>&1
+			;;
+		opkg)
+			opkg status "$1" 2>/dev/null | grep -q '^Status: .* installed'
+			;;
+		*)
+			return 1
+			;;
+	esac
 }
 
 dep_value() {
@@ -589,6 +613,8 @@ status_json() {
 	printf '{"ok":true,'
 	printf '"serial_driver_installed":%s,' "$(dep_value kmod-usb-serial)"
 	printf '"option_driver_installed":%s,' "$(dep_value kmod-usb-serial-option)"
+	printf '"qmi_wwan_installed":%s,' "$(dep_value kmod-usb-net-qmi-wwan)"
+	printf '"uqmi_installed":%s,' "$(dep_value uqmi)"
 	printf '"socat_installed":%s,' "$(dep_value socat)"
 	printf '"stty_available":%s,' "$(has_cmd stty && printf true || printf false)"
 	printf '"timeout_available":%s' "$(has_timeout && printf true || printf false)"
@@ -602,6 +628,8 @@ probe_json() {
 	printf '{"ok":true,'
 	printf '"serial_driver_installed":%s,' "$(dep_value kmod-usb-serial)"
 	printf '"option_driver_installed":%s,' "$(dep_value kmod-usb-serial-option)"
+	printf '"qmi_wwan_installed":%s,' "$(dep_value kmod-usb-net-qmi-wwan)"
+	printf '"uqmi_installed":%s,' "$(dep_value uqmi)"
 	printf '"socat_installed":%s,' "$(dep_value socat)"
 	printf '"stty_available":%s,' "$(has_cmd stty && printf true || printf false)"
 	printf '"timeout_available":%s,' "$(has_timeout && printf true || printf false)"
@@ -634,11 +662,27 @@ probe_json() {
 install_packages() {
 	local packages="$1"
 	local output
+	local pm
+	pm="$(pkg_manager)"
 
-	output="$(opkg update 2>&1 && opkg install $packages 2>&1)" || {
-		printf '{"ok":false,"message":"安装失败","output":"%s"}\n' "$(json_escape "$output")"
-		exit 1
-	}
+	case "$pm" in
+		apk)
+			output="$(apk update 2>&1 && apk add $packages 2>&1)" || {
+			printf '{"ok":false,"message":"安装失败","output":"%s"}\n' "$(json_escape "$output")"
+			exit 1
+		}
+			;;
+		opkg)
+			output="$(opkg update 2>&1 && opkg install $packages 2>&1)" || {
+			printf '{"ok":false,"message":"安装失败","output":"%s"}\n' "$(json_escape "$output")"
+			exit 1
+		}
+			;;
+		*)
+			printf '{"ok":false,"message":"未找到包管理器 (opkg/apk)","output":""}'
+			exit 1
+			;;
+	esac
 
 	printf '{"ok":true,"message":"安装完成","output":"%s"}\n' "$(json_escape "$output")"
 }
@@ -828,6 +872,12 @@ case "$ACTION" in
 		;;
 	install_serial_drivers)
 		install_packages 'kmod-usb-serial kmod-usb-serial-option'
+		;;
+	install_qmi_wwan)
+		install_packages 'kmod-usb-net-qmi-wwan'
+		;;
+	install_uqmi)
+		install_packages 'uqmi'
 		;;
 	install_socat)
 		install_packages 'socat'

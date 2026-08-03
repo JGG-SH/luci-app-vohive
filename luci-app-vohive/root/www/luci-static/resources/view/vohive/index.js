@@ -755,17 +755,31 @@ return view.extend({
 			E('div', { 'style': 'display:flex; gap:1em; flex-wrap:wrap; align-items:center;' }, [
 				this.renderDependencyState('kmod-usb-serial', data.serial_driver_installed),
 				this.renderDependencyState('kmod-usb-serial-option', data.option_driver_installed),
+				this.renderDependencyState('kmod-usb-net-qmi-wwan', data.qmi_wwan_installed),
+				this.renderDependencyState('uqmi', data.uqmi_installed),
 				this.renderDependencyState('socat', data.socat_installed),
 				data.serial_driver_installed && data.option_driver_installed ? '' : E('button', {
 					'class': 'btn cbi-button cbi-button-action',
 					'click': ui.createHandlerFn(this, function() {
-						return this.runDeviceTool(devicePane, [ 'install_serial_drivers' ], _('确认安装串口驱动吗？\n\n这会执行 opkg update && opkg install kmod-usb-serial kmod-usb-serial-option。\n内核模块包需要匹配当前固件内核版本。'));
+						return this.runDeviceTool(devicePane, [ 'install_serial_drivers' ], _('确认安装串口驱动吗？\n\n这会根据当前包管理器 (opkg/apk) 安装 kmod-usb-serial kmod-usb-serial-option。\n内核模块包需要匹配当前固件内核版本。'));
 					})
 				}, _('安装串口驱动')),
+				data.qmi_wwan_installed ? '' : E('button', {
+					'class': 'btn cbi-button cbi-button-action',
+					'click': ui.createHandlerFn(this, function() {
+						return this.runDeviceTool(devicePane, [ 'install_qmi_wwan' ], _('确认安装 kmod-usb-net-qmi-wwan 吗？\n\n这会根据当前包管理器 (opkg/apk) 安装 QMI 网卡驱动。\n内核模块包需要匹配当前固件内核版本。'));
+					})
+				}, _('安装 qmi_wwan')),
+				data.uqmi_installed ? '' : E('button', {
+					'class': 'btn cbi-button cbi-button-action',
+					'click': ui.createHandlerFn(this, function() {
+						return this.runDeviceTool(devicePane, [ 'install_uqmi' ], _('确认安装 uqmi 吗？\n\n这会根据当前包管理器 (opkg/apk) 安装 uqmi 命令行工具。'));
+					})
+				}, _('安装 uqmi')),
 				data.socat_installed ? '' : E('button', {
 					'class': 'btn cbi-button cbi-button-action',
 					'click': ui.createHandlerFn(this, function() {
-						return this.runDeviceTool(devicePane, [ 'install_socat' ], _('确认安装 socat 吗？\n\n这会执行 opkg update && opkg install socat。\n安装包会占用路由器存储空间，需要可用网络。'));
+						return this.runDeviceTool(devicePane, [ 'install_socat' ], _('确认安装 socat 吗？\n\n这会根据当前包管理器 (opkg/apk) 安装 socat。\n安装包会占用路由器存储空间，需要可用网络。'));
 					})
 				}, _('安装 socat'))
 			])
@@ -1121,12 +1135,12 @@ return view.extend({
 			E('button', {
 				'class': 'btn cbi-button cbi-button-apply',
 				'click': ui.createHandlerFn(this, function() { return runScript('/usr/share/vohive/service.sh', [ 'start' ]); })
-			}, _('启用并启动')),
+			}, _('启动')),
 			' ',
 			E('button', {
 				'class': 'btn cbi-button cbi-button-reset',
 				'click': ui.createHandlerFn(this, function() { return runScript('/usr/share/vohive/service.sh', [ 'stop' ]); })
-			}, _('停止并禁用')),
+			}, _('关闭')),
 			' ',
 			E('button', {
 				'class': 'btn cbi-button cbi-button-reload',
